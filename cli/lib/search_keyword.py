@@ -5,6 +5,7 @@ from .search_utils import (
 )
 
 import string
+from nltk.stem import PorterStemmer
 
 
 def search_cmd(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
@@ -66,8 +67,12 @@ def tokenize_text(text: str, stops_words: list[str]) -> list[str]:
   # split into workds
   tokens = text.split(" ")
   
-  # remove empty strings "", " ", etc
+  # remove empty strings "", " ", and stop words like: "the", "in", etc
   tokens = [s for s in tokens if s.strip() != "" and s not in stops_words]
+  
+  # reduce each token to its root (stemmed form)
+  stemmer = PorterStemmer()
+  tokens = [stemmer.stem(t) for t in tokens]
   
   return tokens
 
