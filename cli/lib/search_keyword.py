@@ -1,6 +1,7 @@
 from .search_utils import (
   DEFAULT_SEARCH_LIMIT,
   load_movies,
+  load_stop_words,
 )
 
 import string
@@ -8,11 +9,12 @@ import string
 
 def search_cmd(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
   movies = load_movies()
+  stops_words = load_stop_words()
   results = []
   
-  query_tokens = tokenize_text(query)
+  query_tokens = tokenize_text(query, stops_words)
   for movie in movies:
-    title_tokens = tokenize_text(movie["title"])
+    title_tokens = tokenize_text(movie["title"], stops_words)
     
     if has_matching_token(query_tokens, title_tokens):
       results.append(movie)
@@ -47,7 +49,7 @@ def preprocess_text(text: str) -> str:
   
   return text
 
-def tokenize_text(text: str) -> list[str]:
+def tokenize_text(text: str, stops_words: list[str]) -> list[str]:
   """
   Splits text into valid tokens. Pre-processing text, and removing empty tokens.
   
@@ -65,7 +67,7 @@ def tokenize_text(text: str) -> list[str]:
   tokens = text.split(" ")
   
   # remove empty strings "", " ", etc
-  tokens = [s for s in tokens if s.strip() != ""]
+  tokens = [s for s in tokens if s.strip() != "" and s not in stops_words]
   
   return tokens
 
