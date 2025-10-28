@@ -9,8 +9,7 @@ project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
   sys.path.insert(0, str(project_root))
 
-from cli.lib.inverted_index import InvertedIndex
-from cli.lib.search_keyword import search_cmd
+from cli.lib.search_keyword import InvertedIndex, search_cmd
 
 def main() -> None:
   parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -30,14 +29,14 @@ def main() -> None:
       results = search_cmd(query)
       
       for i, movie in enumerate(results,1):
-        print(f"{i}. {movie["title"]}")
+        print(f"{i}. {movie["title"]} ID:{movie["id"]}")
       pass
     case "build":
       inverted_index = InvertedIndex()
       inverted_index.build()
       inverted_index.save()
-      docs = inverted_index.get_documents("merida")
-      print(f"First document for token 'merida' = {docs[0]}")
+      # docs = inverted_index.get_documents("merida")
+      # print(f"First document for token 'merida' = {docs[0]}")
       pass
     case _:
       parser.print_help()
