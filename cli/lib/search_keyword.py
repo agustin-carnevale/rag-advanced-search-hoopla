@@ -1,8 +1,11 @@
+import math
+from typing import Counter
 from .search_utils import (
   CACHE_DIR,
   DEFAULT_SEARCH_LIMIT,
   DOCMAP_PATH,
   INDEX_PATH,
+  TERM_FREQUENCIES_PATH,
   load_movies,
   load_stop_words,
 )
@@ -14,13 +17,37 @@ import os
 import pickle
 
 
+
+def tf_idf_cmd(doc_id: int, term: str) -> float:
+  idx = InvertedIndex()
+  idx.load()
+  
+  tf = idx.get_tf(doc_id, term)
+  idf = idx.get_idf(term)
+  
+  return tf * idf
+
+def inverse_document_frequency_cmd(term: str) -> float:
+  idx = InvertedIndex()
+  idx.load()
+  
+  return idx.get_idf(term)
+
+# Look for term frequency at certain doc_id
+def term_frequency_cmd(doc_id: int, term: str) -> int:
+  idx = InvertedIndex()
+  idx.load()
+  # stop_words = load_stop_words()
+  
+  return idx.get_tf(doc_id, term)
+
 # inverted index based search
 def search_cmd(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
   idx = InvertedIndex()
   idx.load()
-  stops_words = load_stop_words()
+  stop_words = load_stop_words()
   
-  query_tokens = tokenize_text(query, stops_words)
+  query_tokens = tokenize_text(query, stop_words)
   
   results = []
   for t in query_tokens:
@@ -54,6 +81,7 @@ class InvertedIndex:
   def __init__(self):
     self.index: dict[str, set[int]] = {}
     self.docmap: dict[int, object] = {}
+    self.term_frequencies: dict[int, Counter] = {}
 
   def __add_document(self, doc_id: int, text: str, stop_words: set[str]) -> None:
     tokens = tokenize_text(text, stop_words)
@@ -61,6 +89,8 @@ class InvertedIndex:
       if t not in self.index:
         self.index[t] = set()
       self.index[t].add(doc_id)
+      # count frequency
+      self.term_frequencies[doc_id] = Counter(tokens)
 
   def get_documents(self, term: str) -> list[object]:
     results = []
@@ -74,6 +104,36 @@ class InvertedIndex:
     # sort results by ID (optional)
     results.sort(key=lambda d: d["id"])
     return results
+  
+  
+  def get_tf(self, doc_id, term):
+    stop_words = load_stop_words()
+    tokens = tokenize_text(term, stop_words)
+    
+    if len(tokens) == 0:
+      return 0
+    
+    if len(tokens) > 1:
+      raise ValueError(f"Error at get_tf(): term has too many tokens.")
+      
+    t = tokens[0]
+    return self.term_frequencies[doc_id][t]
+  
+  
+  def get_idf(self, term) -> float:
+    stop_words = load_stop_words()
+    tokens = tokenize_text(term, stop_words)
+    
+    doc_count = len(self.docmap)
+    term_doc_count = 0
+    if len(tokens) == 1:
+      t = tokens[0]
+      doc_ids_set = self.index.get(t)
+      if (doc_ids_set):
+        term_doc_count = len(doc_ids_set)
+    
+    return math.log((doc_count + 1) / (term_doc_count + 1))
+
 
   def build(self) -> None:
     movies = load_movies()
@@ -94,9 +154,12 @@ class InvertedIndex:
 
     with open(DOCMAP_PATH, "wb") as f:
       pickle.dump(self.docmap, f)
+      
+    with open(TERM_FREQUENCIES_PATH, "wb") as f:
+      pickle.dump(self.term_frequencies, f)
 
   def load(self) -> None:
-    """Load index and docmap from disk if they exist."""
+    """Load index, docmap, term_frequencies from disk if they exist."""
     if os.path.exists(INDEX_PATH):
       with open(INDEX_PATH, "rb") as f:
         self.index = pickle.load(f)
@@ -109,7 +172,12 @@ class InvertedIndex:
     else:
       raise ValueError(f"Loading failed: '{DOCMAP_PATH}' is missing.")
     
-
+    if os.path.exists(TERM_FREQUENCIES_PATH):
+      with open(TERM_FREQUENCIES_PATH, "rb") as f:
+        self.term_frequencies = pickle.load(f)
+    else:
+      raise ValueError(f"Loading failed: '{TERM_FREQUENCIES_PATH}' is missing.")
+    
 def has_matching_token(query_tokens: list[str], title_tokens: list[str]) -> bool:
   # Check if any token in list1 is a substring of any token in list2
   return any(q_token in t_token for q_token in query_tokens for t_token in title_tokens)
@@ -136,7 +204,7 @@ def preprocess_text(text: str) -> str:
   
   return text
 
-def tokenize_text(text: str, stops_words: list[str]) -> list[str]:
+def tokenize_text(text: str, stop_words: list[str]) -> list[str]:
   """
   Splits text into valid tokens. Pre-processing text, and removing empty tokens.
   
@@ -154,7 +222,7 @@ def tokenize_text(text: str, stops_words: list[str]) -> list[str]:
   tokens = text.split(" ")
   
   # remove empty strings "", " ", and stop words like: "the", "in", etc
-  tokens = [s for s in tokens if s.strip() != "" and s not in stops_words]
+  tokens = [s for s in tokens if s.strip() != "" and s not in stop_words]
   
   # reduce each token to its root (stemmed form)
   stemmer = PorterStemmer()

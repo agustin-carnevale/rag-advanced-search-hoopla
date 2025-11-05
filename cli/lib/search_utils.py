@@ -13,7 +13,7 @@ CACHE_DIR = os.path.join(PROJECT_ROOT, "cache")
 
 INDEX_PATH = os.path.join(CACHE_DIR, "index.pkl")
 DOCMAP_PATH = os.path.join(CACHE_DIR, "docmap.pkl")
-
+TERM_FREQUENCIES_PATH = os.path.join(CACHE_DIR, "term_frequencies.pkl")
 
 
 def load_movies() -> list[dict]:
