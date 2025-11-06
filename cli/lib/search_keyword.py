@@ -17,6 +17,11 @@ import os
 import pickle
 
 
+def bm25idf_cmd(term) -> float:
+  idx = InvertedIndex()
+  idx.load()
+  
+  return idx.get_bm25_idf(term)
 
 def tf_idf_cmd(doc_id: int, term: str) -> float:
   idx = InvertedIndex()
@@ -57,6 +62,11 @@ def search_cmd(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
       break
   
   return results[:limit]
+
+def build_cmd() -> None:
+    idx = InvertedIndex()
+    idx.build()
+    idx.save()
   
 
 # basic comparison to query iterating movie
@@ -133,7 +143,21 @@ class InvertedIndex:
         term_doc_count = len(doc_ids_set)
     
     return math.log((doc_count + 1) / (term_doc_count + 1))
-
+  
+  def get_bm25_idf(self, term: str) -> float:
+    N = len(self.docmap)
+    
+    stop_words = load_stop_words()
+    tokens = tokenize_text(term, stop_words)
+    if len(tokens) != 1:
+      raise ValueError(f"Error at get_bm25_idf(): term has not a single token")
+    
+    doc_ids = self.index.get(tokens[0])
+    df = 0
+    if doc_ids:
+      df = len(doc_ids)
+    
+    return math.log((N - df + 0.5) / (df + 0.5) + 1)
 
   def build(self) -> None:
     movies = load_movies()
