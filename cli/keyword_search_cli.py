@@ -5,12 +5,15 @@ import math
 import sys
 from pathlib import Path
 
+
+
 # Add project root to path to allow imports to work when running as script 
 project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
   sys.path.insert(0, str(project_root))
 
-from cli.lib.search_keyword import InvertedIndex, bm25idf_cmd, build_cmd, inverse_document_frequency_cmd, search_cmd, term_frequency_cmd, tf_idf_cmd
+from cli.lib.search_utils import BM25_K1
+from cli.lib.search_keyword import bm25idf_cmd, bm25tf_cmd, build_cmd, inverse_document_frequency_cmd, search_cmd, term_frequency_cmd, tf_idf_cmd
 
 def main() -> None:
   parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -34,6 +37,13 @@ def main() -> None:
   
   bm25_idf_parser = subparsers.add_parser('bm25idf', help="Get BM25 IDF score for a given term")
   bm25_idf_parser.add_argument("term", type=str, help="Term to get BM25 IDF score for")
+  
+  bm25_tf_parser = subparsers.add_parser(
+   "bm25tf", help="Get BM25 TF score for a given document ID and term"
+  )
+  bm25_tf_parser.add_argument("doc_id", type=int, help="Document ID")
+  bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
+  bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
     
   args = parser.parse_args()
 
@@ -75,6 +85,17 @@ def main() -> None:
       # if math.floor(bm25idf * 100) / 100 == 0.60:
       #     bm25idf =  math.floor(bm25idf * 100) / 100
       print(f"BM25 IDF score of '{term}': {bm25idf:.2f}")
+      pass
+    case "bm25tf":
+      doc_id = args.doc_id
+      term = args.term
+      k1 = args.k1
+      bm25tf = bm25tf_cmd(doc_id, term, k1)
+
+      # Forced this to make it pass tests:
+      # if math.floor(bm25idf * 100) / 100 == 0.60:
+      #     bm25idf =  math.floor(bm25idf * 100) / 100
+      print(f"BM25 TF score of '{term}' in document '{doc_id}': {bm25tf:.2f}")
       pass
     case "build":
       print("Building inverted index...")

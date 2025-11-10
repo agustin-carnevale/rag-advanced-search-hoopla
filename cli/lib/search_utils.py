@@ -2,6 +2,7 @@ import json
 import os
 
 DEFAULT_SEARCH_LIMIT = 5
+BM25_K1 = 1.5
 
 # Define project-level paths
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -35,6 +36,6 @@ def load_stop_words() -> list[str]:
     
     return lines
   except FileNotFoundError:
-      print(f"Error: The file '{STOP_WORDS_PATH}' was not found.")
+    print(f"Error: The file '{STOP_WORDS_PATH}' was not found.")
   except Exception as e:
-      print(f"An error occurred: {e}")
+    print(f"An error occurred: {e}")

@@ -1,3 +1,4 @@
+from collections import defaultdict
 import math
 from typing import Counter
 from .search_utils import (
@@ -16,6 +17,14 @@ from nltk.stem import PorterStemmer
 import os
 import pickle
 
+
+def bm25tf_cmd(doc_id: int, term: str, k1: float) -> float:
+  idx = InvertedIndex()
+  idx.load()
+  
+  tf = idx.get_tf(doc_id, term)
+  
+  return (tf * (k1 + 1)) / (tf + k1)
 
 def bm25idf_cmd(term) -> float:
   idx = InvertedIndex()
@@ -89,27 +98,25 @@ def search_cmd_basic(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict
 
 class InvertedIndex:
   def __init__(self):
-    self.index: dict[str, set[int]] = {}
+    self.index: dict[str, set[int]] = defaultdict(set)
     self.docmap: dict[int, object] = {}
-    self.term_frequencies: dict[int, Counter] = {}
+    self.term_frequencies: dict[int, Counter] = defaultdict(Counter)
 
-  def __add_document(self, doc_id: int, text: str, stop_words: set[str]) -> None:
+  def __add_document(self, doc_id: int, text: str, stop_words: list[str]) -> None:
     tokens = tokenize_text(text, stop_words)
-    for t in tokens:
-      if t not in self.index:
-        self.index[t] = set()
+    for t in set(tokens):
       self.index[t].add(doc_id)
-      # count frequency
-      self.term_frequencies[doc_id] = Counter(tokens)
+    
+    # count frequency
+    self.term_frequencies[doc_id].update(tokens)
 
   def get_documents(self, term: str) -> list[object]:
     results = []
-    doc_ids = self.index.get(term)
-    if doc_ids:
-      for doc_id in doc_ids:
-        doc = self.docmap.get(doc_id)
-        if doc:
-          results.append(doc)
+    doc_ids = self.index.get(term, set())
+    for doc_id in doc_ids:
+      doc = self.docmap.get(doc_id)
+      if doc:
+        results.append(doc)
 
     # sort results by ID (optional)
     results.sort(key=lambda d: d["id"])
@@ -243,7 +250,7 @@ def tokenize_text(text: str, stop_words: list[str]) -> list[str]:
   text = preprocess_text(text)
   
   # split into workds
-  tokens = text.split(" ")
+  tokens = text.split()
   
   # remove empty strings "", " ", and stop words like: "the", "in", etc
   tokens = [s for s in tokens if s.strip() != "" and s not in stop_words]
