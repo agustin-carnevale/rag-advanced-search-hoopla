@@ -7,6 +7,7 @@ from .search_utils import (
   DOCMAP_PATH,
   INDEX_PATH,
   TERM_FREQUENCIES_PATH,
+  DOCS_LENGTHS_PATH,
   load_movies,
   load_stop_words,
 )
@@ -18,13 +19,11 @@ import os
 import pickle
 
 
-def bm25tf_cmd(doc_id: int, term: str, k1: float) -> float:
+def bm25tf_cmd(doc_id: int, term: str, k1: float, b: float) -> float:
   idx = InvertedIndex()
   idx.load()
   
-  tf = idx.get_tf(doc_id, term)
-  
-  return (tf * (k1 + 1)) / (tf + k1)
+  return idx.get_bm25_tf(doc_id, term, k1, b)
 
 def bm25idf_cmd(term) -> float:
   idx = InvertedIndex()
@@ -101,6 +100,7 @@ class InvertedIndex:
     self.index: dict[str, set[int]] = defaultdict(set)
     self.docmap: dict[int, object] = {}
     self.term_frequencies: dict[int, Counter] = defaultdict(Counter)
+    self.doc_lengths: dict[int, int] = {}
 
   def __add_document(self, doc_id: int, text: str, stop_words: list[str]) -> None:
     tokens = tokenize_text(text, stop_words)
@@ -109,6 +109,7 @@ class InvertedIndex:
     
     # count frequency
     self.term_frequencies[doc_id].update(tokens)
+    self.doc_lengths[doc_id] = len(tokens)
 
   def get_documents(self, term: str) -> list[object]:
     results = []
@@ -122,6 +123,15 @@ class InvertedIndex:
     results.sort(key=lambda d: d["id"])
     return results
   
+  def __get_avg_doc_length(self) -> float:
+    if len(self.doc_lengths) == 0:
+      return 0.0
+    
+    lengths = self.doc_lengths.values()
+    total_sum = sum(lengths)
+    n = len(lengths)
+    return total_sum / n
+
   
   def get_tf(self, doc_id, term):
     stop_words = load_stop_words()
@@ -163,8 +173,23 @@ class InvertedIndex:
     df = 0
     if doc_ids:
       df = len(doc_ids)
-    
+      
     return math.log((N - df + 0.5) / (df + 0.5) + 1)
+  
+  
+  def get_bm25_tf(self, doc_id: int, term: str, k1: float, b: float) -> float:
+    tf = self.get_tf(doc_id, term)
+    
+    avg_doc_length = self.__get_avg_doc_length()
+    doc_length = self.doc_lengths[doc_id]
+    
+    # Length normalization factor
+    length_norm = 1 - b + b * (doc_length /avg_doc_length)
+
+    # Apply to term frequency
+    bm25tf = (tf * (k1 + 1)) / (tf + k1 * length_norm)
+    
+    return bm25tf
 
   def build(self) -> None:
     movies = load_movies()
@@ -188,6 +213,9 @@ class InvertedIndex:
       
     with open(TERM_FREQUENCIES_PATH, "wb") as f:
       pickle.dump(self.term_frequencies, f)
+      
+    with open(DOCS_LENGTHS_PATH, "wb") as f:
+      pickle.dump(self.doc_lengths, f)
 
   def load(self) -> None:
     """Load index, docmap, term_frequencies from disk if they exist."""
@@ -208,6 +236,12 @@ class InvertedIndex:
         self.term_frequencies = pickle.load(f)
     else:
       raise ValueError(f"Loading failed: '{TERM_FREQUENCIES_PATH}' is missing.")
+
+    if os.path.exists(DOCS_LENGTHS_PATH):
+      with open(DOCS_LENGTHS_PATH, "rb") as f:
+        self.doc_lengths = pickle.load(f)
+    else:
+      raise ValueError(f"Loading failed: '{DOCS_LENGTHS_PATH}' is missing.")
     
 def has_matching_token(query_tokens: list[str], title_tokens: list[str]) -> bool:
   # Check if any token in list1 is a substring of any token in list2

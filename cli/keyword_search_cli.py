@@ -12,7 +12,7 @@ project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
   sys.path.insert(0, str(project_root))
 
-from cli.lib.search_utils import BM25_K1
+from cli.lib.search_utils import BM25_B, BM25_K1
 from cli.lib.search_keyword import bm25idf_cmd, bm25tf_cmd, build_cmd, inverse_document_frequency_cmd, search_cmd, term_frequency_cmd, tf_idf_cmd
 
 def main() -> None:
@@ -44,6 +44,7 @@ def main() -> None:
   bm25_tf_parser.add_argument("doc_id", type=int, help="Document ID")
   bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
   bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
+  bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 B parameter")
     
   args = parser.parse_args()
 
@@ -90,7 +91,8 @@ def main() -> None:
       doc_id = args.doc_id
       term = args.term
       k1 = args.k1
-      bm25tf = bm25tf_cmd(doc_id, term, k1)
+      b = args.b
+      bm25tf = bm25tf_cmd(doc_id, term, k1, b)
 
       # Forced this to make it pass tests:
       # if math.floor(bm25idf * 100) / 100 == 0.60:
