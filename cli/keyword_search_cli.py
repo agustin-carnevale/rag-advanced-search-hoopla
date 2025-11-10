@@ -13,7 +13,7 @@ if str(project_root) not in sys.path:
   sys.path.insert(0, str(project_root))
 
 from cli.lib.search_utils import BM25_B, BM25_K1
-from cli.lib.search_keyword import bm25idf_cmd, bm25tf_cmd, build_cmd, inverse_document_frequency_cmd, search_cmd, term_frequency_cmd, tf_idf_cmd
+from cli.lib.search_keyword import bm25_search_cmd, bm25idf_cmd, bm25tf_cmd, build_cmd, inverse_document_frequency_cmd, search_cmd, term_frequency_cmd, tf_idf_cmd
 
 def main() -> None:
   parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -45,7 +45,10 @@ def main() -> None:
   bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
   bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
   bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 B parameter")
-    
+  
+  bm25search_parser = subparsers.add_parser("bm25search", help="Search movies using full BM25 scoring")
+  bm25search_parser.add_argument("query", type=str, help="Search query")
+  bm25search_parser.add_argument("limit", type=int, nargs='?', default=5, help="Limit the num of results")
   args = parser.parse_args()
 
   match args.command:
@@ -67,8 +70,7 @@ def main() -> None:
     case "idf":
       term = args.term
       idf = inverse_document_frequency_cmd(term)
-      # print(f"{idf:.4f}")
-      # idf_forced_floor =  math.floor(idf * 100) / 100
+
       print(f"Inverse document frequency of '{term}': {idf:.2f}")
       pass
     case "tfidf":
@@ -82,9 +84,6 @@ def main() -> None:
       term = args.term
       bm25idf = bm25idf_cmd(term)
 
-      # Forced this to make it pass tests:
-      # if math.floor(bm25idf * 100) / 100 == 0.60:
-      #     bm25idf =  math.floor(bm25idf * 100) / 100
       print(f"BM25 IDF score of '{term}': {bm25idf:.2f}")
       pass
     case "bm25tf":
@@ -94,10 +93,16 @@ def main() -> None:
       b = args.b
       bm25tf = bm25tf_cmd(doc_id, term, k1, b)
 
-      # Forced this to make it pass tests:
-      # if math.floor(bm25idf * 100) / 100 == 0.60:
-      #     bm25idf =  math.floor(bm25idf * 100) / 100
       print(f"BM25 TF score of '{term}' in document '{doc_id}': {bm25tf:.2f}")
+      pass
+      
+    case "bm25search":
+      query = args.query
+      limit = args.limit
+      results = bm25_search_cmd(query, limit)
+
+      for i, doc in enumerate(results,1): 
+        print(f"{i}. ({doc["id"]}) {doc["movie"]["title"]} - Score: {doc["score"]:.2f}")
       pass
     case "build":
       print("Building inverted index...")

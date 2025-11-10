@@ -19,6 +19,12 @@ import os
 import pickle
 
 
+def bm25_search_cmd(query: str, limit: int) -> list[dict]:
+  idx = InvertedIndex()
+  idx.load()
+  
+  return idx.bm25_search(query, limit)
+
 def bm25tf_cmd(doc_id: int, term: str, k1: float, b: float) -> float:
   idx = InvertedIndex()
   idx.load()
@@ -190,6 +196,35 @@ class InvertedIndex:
     bm25tf = (tf * (k1 + 1)) / (tf + k1 * length_norm)
     
     return bm25tf
+  
+  def bm25(self, doc_id, term):
+    bm25idf= self.get_bm25_idf(term)
+    bm25tf = self.get_bm25_tf(doc_id, term, 1.5, 0.75)
+    
+    return bm25idf * bm25tf
+  
+  
+  def bm25_search(self, query, limit):
+    stop_words = load_stop_words()
+    q_tokens = tokenize_text(query, stop_words)
+    
+    scores = {}
+    for doc_id in self.docmap:
+      score = 0
+      for t in q_tokens:
+        score += self.bm25(doc_id, t)
+      scores[doc_id] = score
+    
+    sorted_docs = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+    
+    top_results = sorted_docs[:limit]
+    
+    enriched_results = [
+      {"id": doc_id, "score": score, "movie": self.docmap[doc_id]}
+      for doc_id, score in top_results
+    ]
+
+    return enriched_results
 
   def build(self) -> None:
     movies = load_movies()
