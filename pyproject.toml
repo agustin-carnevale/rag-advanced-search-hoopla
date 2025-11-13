@@ -1,9 +1,15 @@
 [project]
+requires-python = ">=3.11,<3.13"
 name = "hoopla"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
 dependencies = [
     "nltk==3.9.1",
+    "numpy<2",
+    "sentence-transformers>=5.1.2",
+]
+[tool.uv]
+required-environments = [
+  "sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
