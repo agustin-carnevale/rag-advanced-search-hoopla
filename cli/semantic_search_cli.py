@@ -10,7 +10,7 @@ if str(project_root) not in sys.path:
   sys.path.insert(0, str(project_root))
 
 
-from cli.lib.semantic_search import embed_text, verify_model
+from cli.lib.semantic_search import embed_text, verify_embeddings, verify_model
 
 def main():
   parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -20,6 +20,8 @@ def main():
  
   embed_text_parser = subparsers.add_parser("embed_text", help="Created embedding for the given text")
   embed_text_parser.add_argument("text", type=str, help="Input text for the embedding")
+ 
+  subparsers.add_parser("verify_embeddings", help="Verifies embeddings exist if not creates them")
  
  
   args = parser.parse_args()
@@ -32,6 +34,10 @@ def main():
     case "embed_text":
       text = args.text
       embed_text(text)
+      pass
+    
+    case "verify_embeddings":
+      verify_embeddings()
       pass
     
     case _:
