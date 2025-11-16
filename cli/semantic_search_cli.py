@@ -10,7 +10,7 @@ if str(project_root) not in sys.path:
   sys.path.insert(0, str(project_root))
 
 
-from cli.lib.semantic_search import embed_query_text, embed_text, search_query, verify_embeddings, verify_model
+from cli.lib.semantic_search import chunk_text, embed_query_text, embed_text, search_query, verify_embeddings, verify_model
 
 def main():
   parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -33,7 +33,17 @@ def main():
     type=int,
     default=5,
     help="Number of results to show (default: 5)"
+  )
+  
+  chunk_parser = subparsers.add_parser("chunk", help="Split long text into smaller pieces for embedding")
+  chunk_parser.add_argument("text", type=str, help="Text to chunk")
+  chunk_parser.add_argument(
+    "--chunk-size",
+    type=int,
+    default=200,
+    help="Size in characters of the chunk (default: 200)"
 )
+  
 
   args = parser.parse_args()
 
@@ -55,10 +65,17 @@ def main():
       query = args.query
       embed_query_text(query)
       pass
+    
     case "search":
       query = args.query
       limit = args.limit
       search_query(query, limit)
+      pass
+    
+    case "chunk":
+      text = args.text
+      chunk_size = args.chunk_size
+      chunk_text(text, chunk_size)
       pass
     
     case _:

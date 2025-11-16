@@ -147,3 +147,17 @@ def search_query(query, limit):
 
     print(f"   {short_desc}")
     print()
+    
+  
+def chunk_text(text: str, chunk_size: int):
+  print(f"Chunking {len(text)} characters")
+  
+  list_of_words = text.rsplit()
+  
+  chunks = []
+  for i in range(0, len(list_of_words), chunk_size):
+      chunk = " ".join(list_of_words[i:i + chunk_size])
+      chunks.append(chunk)
+
+  for i, w in enumerate(chunks,1):
+    print(f"{i}. {w}")
