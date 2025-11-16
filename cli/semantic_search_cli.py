@@ -10,7 +10,7 @@ if str(project_root) not in sys.path:
   sys.path.insert(0, str(project_root))
 
 
-from cli.lib.semantic_search import embed_query_text, embed_text, verify_embeddings, verify_model
+from cli.lib.semantic_search import embed_query_text, embed_text, search_query, verify_embeddings, verify_model
 
 def main():
   parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -25,6 +25,15 @@ def main():
  
   embedquery_parser = subparsers.add_parser("embedquery", help="Created embedding for the given query")
   embedquery_parser.add_argument("query", type=str, help="Input query to embed")
+  
+  search_parser = subparsers.add_parser("search", help="Search among all the documents/movies")
+  search_parser.add_argument("query", type=str, help="Input query to search for")
+  search_parser.add_argument(
+    "--limit",
+    type=int,
+    default=5,
+    help="Number of results to show (default: 5)"
+)
 
   args = parser.parse_args()
 
@@ -45,6 +54,11 @@ def main():
     case "embedquery":
       query = args.query
       embed_query_text(query)
+      pass
+    case "search":
+      query = args.query
+      limit = args.limit
+      search_query(query, limit)
       pass
     
     case _:

@@ -1,5 +1,6 @@
 
 import os
+import textwrap
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
@@ -55,6 +56,32 @@ class SemanticSearch:
         return self.embeddings
     
     return self.build_embeddings(documents)
+
+  def search(self, query, limit):
+    if self.embeddings is None or self.embeddings.size == 0:
+      raise ValueError("No embeddings loaded. Call `load_or_create_embeddings` first.")
+    
+    query_embedding = self.generate_embedding(query)
+    
+    similarities = []
+    for i, doc_embedding in enumerate(self.embeddings):
+      similarity = cosine_similarity(query_embedding,doc_embedding)
+      doc = self.documents[i]
+      similarities.append((similarity, doc))
+      
+    
+    similarities.sort(key=lambda x: x[0], reverse=True)
+    
+    results = []
+    for item in similarities[:limit]:
+      results.append({
+        "score": item[0],
+        "title": item[1]["title"],
+        "description":  item[1]["description"]
+      })
+      
+    return results
+    
     
       
 
@@ -89,3 +116,34 @@ def embed_query_text(query: str):
   print(f"Query: {query}")
   print(f"First 5 dimensions: {embedding[:5]}")
   print(f"Shape: {embedding.shape}")
+  
+  
+def cosine_similarity(vec1, vec2) -> float:
+  dot_product = np.dot(vec1, vec2)
+  norm1 = np.linalg.norm(vec1)
+  norm2 = np.linalg.norm(vec2)
+
+  if norm1 == 0 or norm2 == 0:
+      return 0.0
+
+  return dot_product / (norm1 * norm2)
+
+
+def search_query(query, limit):
+  ss = SemanticSearch()
+  documents = load_movies()  
+  ss.load_or_create_embeddings(documents)
+  
+  results = ss.search(query, limit)
+  
+  for i, result in enumerate(results, 1):
+    print(f"{i}. {result["title"]} (score: {result["score"]:.4f})")
+    # wrap description to a single line of max width
+    wrapped = textwrap.wrap(result["description"], width=80)
+    if wrapped:
+        short_desc = wrapped[0] + "..."
+    else:
+        short_desc = ""
+
+    print(f"   {short_desc}")
+    print()
