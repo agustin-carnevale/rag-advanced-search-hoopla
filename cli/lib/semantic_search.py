@@ -149,15 +149,25 @@ def search_query(query, limit):
     print()
     
   
-def chunk_text(text: str, chunk_size: int):
+def chunk_text(text: str, chunk_size: int, overlap: int):
+  if overlap > chunk_size:
+    raise ValueError("Overlap cannot be greater than the chunk_size")
+  
   print(f"Chunking {len(text)} characters")
   
   list_of_words = text.rsplit()
   
   chunks = []
-  for i in range(0, len(list_of_words), chunk_size):
-      chunk = " ".join(list_of_words[i:i + chunk_size])
-      chunks.append(chunk)
+  if len(list_of_words) > 0:
+    chunk = " ".join(list_of_words[0:chunk_size])
+    chunks.append(chunk)
+    
+  start = chunk_size - overlap
+  while start+overlap < len(list_of_words):
+    end = start + chunk_size
+    chunk = " ".join(list_of_words[start:end])
+    chunks.append(chunk)
+    start = end - overlap
 
   for i, w in enumerate(chunks,1):
     print(f"{i}. {w}")
