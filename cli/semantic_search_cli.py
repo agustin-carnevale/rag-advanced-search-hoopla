@@ -10,7 +10,7 @@ if str(project_root) not in sys.path:
   sys.path.insert(0, str(project_root))
 
 
-from cli.lib.semantic_search import chunk_text, embed_query_text, embed_text, search_query, verify_embeddings, verify_model
+from cli.lib.semantic_search import chunk_text, embed_query_text, embed_text, search_query, semantic_chunk_text, verify_embeddings, verify_model
 
 def main():
   parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -39,6 +39,11 @@ def main():
   chunk_parser.add_argument("text", type=str, help="Text to chunk")
   chunk_parser.add_argument("--chunk-size", type=int, default=200,help="Size in words of the chunk (default: 200)")
   chunk_parser.add_argument("--overlap", type=int, default=0, help="Number words to overlap between chunks")
+  
+  semantic_chunk_parser = subparsers.add_parser("semantic_chunk", help="Split long text into smaller pieces for embedding")
+  semantic_chunk_parser.add_argument("text", type=str, help="Text to chunk")
+  semantic_chunk_parser.add_argument("--max-chunk-size", type=int, default=4,help="Size in sentences of the chunk (default: 4)")
+  semantic_chunk_parser.add_argument("--overlap", type=int, default=0, help="Number sentences to overlap between chunks")
 
   args = parser.parse_args()
 
@@ -72,6 +77,12 @@ def main():
       chunk_size = args.chunk_size
       overlap = args.overlap
       chunk_text(text, chunk_size, overlap)
+      pass
+    case "semantic_chunk":
+      text = args.text
+      max_chunk_size = args.max_chunk_size
+      overlap = args.overlap
+      semantic_chunk_text(text, max_chunk_size, overlap)
       pass
     
     case _:

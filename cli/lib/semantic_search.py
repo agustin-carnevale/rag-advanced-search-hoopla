@@ -1,5 +1,6 @@
 
 import os
+import re
 import textwrap
 from sentence_transformers import SentenceTransformer
 import numpy as np
@@ -171,3 +172,29 @@ def chunk_text(text: str, chunk_size: int, overlap: int):
 
   for i, w in enumerate(chunks,1):
     print(f"{i}. {w}")
+    
+    
+def semantic_chunk_text(text: str, max_chunk_size: int, overlap: int):
+  # if overlap > chunk_size:
+  #   raise ValueError("Overlap cannot be greater than the chunk_size")
+  
+  print(f"Semantically chunking {len(text)} characters")
+  
+  list_of_sentences = re.split(r"(?<=[.!?])\s+", text)
+  
+  chunks = []
+  if len(list_of_sentences) > 0:
+    chunk = " ".join(list_of_sentences[0:max_chunk_size])
+    chunks.append(chunk)
+    
+  start = max_chunk_size - overlap
+  while start+overlap < len(list_of_sentences):
+    end = start + max_chunk_size
+    chunk = " ".join(list_of_sentences[start:end])
+    chunks.append(chunk)
+    start = end - overlap
+
+  for i, w in enumerate(chunks,1):
+    print(f"{i}. {w}")
+    
+   
