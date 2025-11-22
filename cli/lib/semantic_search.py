@@ -11,7 +11,6 @@ class SemanticSearch:
   def __init__(self):
     # Load the model (downloads automatically the first time)
     self.model = SentenceTransformer('all-MiniLM-L6-v2')
-    
     self.embeddings = None
     self.documents = None
     self.document_map = {}
@@ -84,8 +83,6 @@ class SemanticSearch:
     return results
     
     
-      
-
 
 def verify_model():
   ss = SemanticSearch()
@@ -175,8 +172,6 @@ def chunk_text(text: str, chunk_size: int, overlap: int):
     
     
 def semantic_chunk_text(text: str, max_chunk_size: int, overlap: int):
-  # if overlap > chunk_size:
-  #   raise ValueError("Overlap cannot be greater than the chunk_size")
   
   print(f"Semantically chunking {len(text)} characters")
   
@@ -196,5 +191,7 @@ def semantic_chunk_text(text: str, max_chunk_size: int, overlap: int):
 
   for i, w in enumerate(chunks,1):
     print(f"{i}. {w}")
+    
+  return chunks
     
    
