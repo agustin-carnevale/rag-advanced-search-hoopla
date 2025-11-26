@@ -10,7 +10,7 @@ if str(project_root) not in sys.path:
   sys.path.insert(0, str(project_root))
 
 
-from cli.lib.chunked_semantic_search import embed_chunks_cmd
+from cli.lib.chunked_semantic_search import embed_chunks_cmd, search_chunked_cmd
 from cli.lib.semantic_search import chunk_text, embed_query_text, embed_text, search_query, semantic_chunk_text, verify_embeddings, verify_model
 
 def main():
@@ -47,7 +47,11 @@ def main():
   semantic_chunk_parser.add_argument("--overlap", type=int, default=0, help="Number sentences to overlap between chunks")
   
   subparsers.add_parser("embed_chunks", help="Verifies chunked embeddings exist if not creates them")
-
+  
+  search_chunked_parser = subparsers.add_parser("search_chunked", help="Search among all the documents/movies")
+  search_chunked_parser.add_argument("query", type=str, help="Input query to search for")
+  search_chunked_parser.add_argument("--limit", type=int, default=5, help="Number of results to show (default: 5)")
+  
   args = parser.parse_args()
 
   match args.command:
@@ -90,6 +94,12 @@ def main():
     
     case "embed_chunks":
       embed_chunks_cmd()
+      pass
+    
+    case "search_chunked":
+      query = args.query
+      limit = args.limit
+      search_chunked_cmd(query, limit)
       pass
     
     case _:
