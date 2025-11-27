@@ -108,7 +108,19 @@ class ChunkedSemanticSearch(SemanticSearch):
 def semantic_chunk(text: str, max_chunk_size: int, overlap: int):
   # print(f"Semantically chunking {len(text)} characters")
   
-  list_of_sentences = re.split(r"(?<=[.!?])\s+", text)
+  # remove leading and trailing whitespace
+  text = text.strip()
+  if len(text) == 0:
+    return []
+  
+  
+  raw_list_of_sentences = re.split(r"(?<=[.!?])\s+", text)
+  list_of_sentences = []
+  for s in raw_list_of_sentences:
+    # remove leading and trailing whitespace
+    sentence = s.strip()
+    if len(sentence) > 0:
+      list_of_sentences.append(sentence)
   
   chunks = []
   if len(list_of_sentences) > 0:
@@ -131,8 +143,6 @@ def embed_chunks_cmd():
   embeddings = css.load_or_create_chunk_embeddings(documents)
 
   print(f"Generated {len(embeddings)} chunked embeddings")
-  
-  
   
   
 def search_chunked_cmd(query: str, limit: int):
