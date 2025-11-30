@@ -99,7 +99,8 @@ class ChunkedSemanticSearch(SemanticSearch):
       results.append({
         "score": movie_score,
         "title": doc["title"],
-        "description":  doc["description"]
+        "description":  doc["description"],
+        "doc_id": movie_idx,
       })
       
     return results    
